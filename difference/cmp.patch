@@ -1,0 +1,27 @@
+diff -ruN ../openbsd/usr.bin/cmp/cmp.c src/cmp/cmp.c
+--- ../openbsd/usr.bin/cmp/cmp.c	2020-04-12 21:09:01.313138147 +0900
++++ src/cmp/cmp.c	2020-04-12 21:15:44.990146153 +0900
+@@ -41,9 +41,12 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
++#include <bsd.h>
+ 
+ #include "extern.h"
+ 
++#define pledge(request, paths) 0 /* linux doesn't have pledge */
++
+ int	lflag, sflag;
+ 
+ static off_t get_skip(const char *, const char *);
+diff -ruN ../openbsd/usr.bin/cmp/regular.c src/cmp/regular.c
+--- ../openbsd/usr.bin/cmp/regular.c	2020-04-12 21:09:01.313138147 +0900
++++ src/cmp/regular.c	2020-04-12 21:14:42.513144914 +0900
+@@ -38,6 +38,7 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <string.h>
++#include <bsd.h>
+ 
+ #include "extern.h"
+ 

@@ -1,0 +1,13 @@
+diff -ruN ../openbsd/usr.bin/diff3/diff3prog.c src/diff3/diff3prog.c
+--- ../openbsd/usr.bin/diff3/diff3prog.c	2020-04-12 21:09:01.344138148 +0900
++++ src/diff3/diff3prog.c	2020-04-12 21:26:49.403159330 +0900
+@@ -70,6 +70,9 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
++#include <bsd.h>
++
++#define pledge(request, paths) 0
+ 
+ /* diff3 - 3-way differential file comparison */
+ 

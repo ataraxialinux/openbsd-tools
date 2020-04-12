@@ -1,0 +1,50 @@
+diff -ruN ../openbsd/usr.bin/diff/diff.c src/diff/diff.c
+--- ../openbsd/usr.bin/diff/diff.c	2020-04-12 21:09:01.343138148 +0900
++++ src/diff/diff.c	2020-04-12 21:17:56.655148764 +0900
+@@ -32,10 +32,13 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <limits.h>
++#include <bsd.h>
+ 
+ #include "diff.h"
+ #include "xmalloc.h"
+ 
++#define pledge(request, paths) 0
++
+ int	 Nflag, Pflag, rflag, sflag, Tflag;
+ int	 diff_format, diff_context, status;
+ char	*start, *ifdefname, *diffargs, *label[2], *ignore_pats;
+diff -ruN ../openbsd/usr.bin/diff/diffdir.c src/diff/diffdir.c
+--- ../openbsd/usr.bin/diff/diffdir.c	2020-04-12 21:09:01.343138148 +0900
++++ src/diff/diffdir.c	2020-04-12 21:22:49.834154579 +0900
+@@ -33,6 +33,7 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <limits.h>
++#include <bsd.h>
+ 
+ #include "diff.h"
+ #include "xmalloc.h"
+diff -ruN ../openbsd/usr.bin/diff/diffreg.c src/diff/diffreg.c
+--- ../openbsd/usr.bin/diff/diffreg.c	2020-04-12 21:09:01.344138148 +0900
++++ src/diff/diffreg.c	2020-04-12 21:22:59.246154765 +0900
+@@ -79,6 +79,7 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <limits.h>
++#include <bsd.h>
+ 
+ #include "diff.h"
+ #include "xmalloc.h"
+diff -ruN ../openbsd/usr.bin/diff/xmalloc.c src/diff/xmalloc.c
+--- ../openbsd/usr.bin/diff/xmalloc.c	2020-04-12 21:09:01.344138148 +0900
++++ src/diff/xmalloc.c	2020-04-12 21:23:05.126154882 +0900
+@@ -19,6 +19,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <bsd.h>
+ 
+ #include "xmalloc.h"
+ 
