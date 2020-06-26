@@ -1,0 +1,422 @@
+diff -ruN ../../openbsd/usr.bin/doas/CVS/Entries doas.patched/CVS/Entries
+--- ../../openbsd/usr.bin/doas/CVS/Entries	2020-05-08 03:10:46.000000000 +0900
++++ doas.patched/CVS/Entries	1970-01-01 09:00:00.000000000 +0900
+@@ -1,8 +0,0 @@
+-/Makefile/1.3/Mon Jul  3 22:21:47 2017//
+-/doas.1/1.23/Thu Jul  4 19:04:17 2019//
+-/doas.c/1.82/Fri Oct 18 17:15:45 2019//
+-/doas.conf.5/1.42/Mon Feb 10 13:18:20 2020//
+-/doas.h/1.15/Mon Jun 17 19:51:23 2019//
+-/env.c/1.10/Sun Jul  7 19:21:28 2019//
+-/parse.y/1.27/Wed Jul 11 07:39:22 2018//
+-D
+diff -ruN ../../openbsd/usr.bin/doas/CVS/Repository doas.patched/CVS/Repository
+--- ../../openbsd/usr.bin/doas/CVS/Repository	2020-05-08 03:10:45.000000000 +0900
++++ doas.patched/CVS/Repository	1970-01-01 09:00:00.000000000 +0900
+@@ -1 +0,0 @@
+-src/usr.bin/doas
+diff -ruN ../../openbsd/usr.bin/doas/CVS/Root doas.patched/CVS/Root
+--- ../../openbsd/usr.bin/doas/CVS/Root	2020-05-08 03:10:45.000000000 +0900
++++ doas.patched/CVS/Root	1970-01-01 09:00:00.000000000 +0900
+@@ -1 +0,0 @@
+-/cvs
+diff -ruN ../../openbsd/usr.bin/doas/doas.1 doas.patched/doas.1
+--- ../../openbsd/usr.bin/doas/doas.1	2019-07-05 04:04:17.000000000 +0900
++++ doas.patched/doas.1	2020-06-26 20:40:46.732421149 +0900
+@@ -22,7 +22,6 @@
+ .Sh SYNOPSIS
+ .Nm doas
+ .Op Fl Lns
+-.Op Fl a Ar style
+ .Op Fl C Ar config
+ .Op Fl u Ar user
+ .Ar command
+@@ -67,14 +66,6 @@
+ .Pp
+ The options are as follows:
+ .Bl -tag -width tenletters
+-.It Fl a Ar style
+-Use the specified authentication style when validating the user,
+-as allowed by
+-.Pa /etc/login.conf .
+-A list of doas-specific authentication methods may be configured by adding an
+-.Sq auth-doas
+-entry in
+-.Xr login.conf 5 .
+ .It Fl C Ar config
+ Parse and check the configuration file
+ .Ar config ,
+diff -ruN ../../openbsd/usr.bin/doas/doas.c doas.patched/doas.c
+--- ../../openbsd/usr.bin/doas/doas.c	2019-10-19 02:15:45.000000000 +0900
++++ doas.patched/doas.c	2020-06-26 20:48:31.928721192 +0900
+@@ -20,8 +20,7 @@
+ #include <sys/ioctl.h>
+ 
+ #include <limits.h>
+-#include <login_cap.h>
+-#include <bsd_auth.h>
++#include <shadow.h>
+ #include <readpassphrase.h>
+ #include <string.h>
+ #include <stdio.h>
+@@ -36,10 +35,32 @@
+ 
+ #include "doas.h"
+ 
++#define pledge(request, paths) 0
++#define unveil(request, paths) 0
++
++/* From Oasis Linux */
++static int
++auth_userresponse(const char *user, const char *pass)
++{
++	struct spwd *sp;
++	char *p1, *p2;
++
++	sp = getspnam(user);
++	if (!sp)
++		return 0;
++	p1 = sp->sp_pwdp;
++	if (p1[0] == '!' || p1[0] == '*')
++		return 0;
++	p2 = crypt(pass, p1);
++	if (!p2)
++		return 0;
++	return strcmp(p1, p2) == 0;
++}
++
+ static void __dead
+ usage(void)
+ {
+-	fprintf(stderr, "usage: doas [-Lns] [-a style] [-C config] [-u user]"
++	fprintf(stderr, "usage: doas [-Lns] [-C config] [-u user]"
+ 	    " command [args]\n");
+ 	exit(1);
+ }
+@@ -198,22 +219,17 @@
+ }
+ 
+ static void
+-authuser(char *myname, char *login_style, int persist)
++authuser(char *myname, int persist)
+ {
+ 	char *challenge = NULL, *response, rbuf[1024], cbuf[128];
+-	auth_session_t *as;
+-	int fd = -1;
++	int fd = -1, valid = 0;
+ 
+-	if (persist)
+-		fd = open("/dev/tty", O_RDWR);
+-	if (fd != -1) {
+-		if (ioctl(fd, TIOCCHKVERAUTH) == 0)
+-			goto good;
++	if (persist) {
++		fd = openpersist(&valid);
++		if (valid)
++ 			goto good;
+ 	}
+ 
+-	if (!(as = auth_userchallenge(myname, login_style, "auth-doas",
+-	    &challenge)))
+-		errx(1, "Authorization failed");
+ 	if (!challenge) {
+ 		char host[HOST_NAME_MAX + 1];
+ 		if (gethostname(host, sizeof(host)))
+@@ -225,13 +241,13 @@
+ 	response = readpassphrase(challenge, rbuf, sizeof(rbuf),
+ 	    RPP_REQUIRE_TTY);
+ 	if (response == NULL && errno == ENOTTY) {
+-		syslog(LOG_AUTHPRIV | LOG_NOTICE,
++		syslog(LOG_NOTICE,
+ 		    "tty required for %s", myname);
+ 		errx(1, "a tty is required");
+ 	}
+-	if (!auth_userresponse(as, response, 0)) {
++	if (!auth_userresponse(myname, response)) {
+ 		explicit_bzero(rbuf, sizeof(rbuf));
+-		syslog(LOG_AUTHPRIV | LOG_NOTICE,
++		syslog(LOG_NOTICE,
+ 		    "failed auth for %s", myname);
+ 		errx(1, "Authorization failed");
+ 	}
+@@ -239,7 +255,7 @@
+ good:
+ 	if (fd != -1) {
+ 		int secs = 5 * 60;
+-		ioctl(fd, TIOCSETVERAUTH, &secs);
++		setpersist(fd);
+ 		close(fd);
+ 	}
+ }
+@@ -306,28 +322,21 @@
+ 	int nflag = 0;
+ 	char cwdpath[PATH_MAX];
+ 	const char *cwd;
+-	char *login_style = NULL;
+ 	char **envp;
+ 
+ 	setprogname("doas");
+ 
+-	closefrom(STDERR_FILENO + 1);
++	openlog("doas", 0, LOG_AUTHPRIV);
+ 
+ 	uid = getuid();
+ 
+-	while ((ch = getopt(argc, argv, "a:C:Lnsu:")) != -1) {
++	while ((ch = getopt(argc, argv, "C:Lnsu:")) != -1) {
+ 		switch (ch) {
+-		case 'a':
+-			login_style = optarg;
+-			break;
+ 		case 'C':
+ 			confpath = optarg;
+ 			break;
+ 		case 'L':
+-			i = open("/dev/tty", O_RDWR);
+-			if (i != -1)
+-				ioctl(i, TIOCCLRVERAUTH);
+-			exit(i == -1);
++			exit(clearpersist() != 0);
+ 		case 'u':
+ 			if (parseuid(optarg, &target) != 0)
+ 				errx(1, "unknown user");
+@@ -395,7 +404,7 @@
+ 	cmd = argv[0];
+ 	if (!permit(uid, groups, ngroups, &rule, target, cmd,
+ 	    (const char **)argv + 1)) {
+-		syslog(LOG_AUTHPRIV | LOG_NOTICE,
++		syslog(LOG_NOTICE,
+ 		    "failed command for %s: %s", mypw->pw_name, cmdline);
+ 		errc(1, EPERM, NULL);
+ 	}
+@@ -404,7 +413,7 @@
+ 		if (nflag)
+ 			errx(1, "Authorization required");
+ 
+-		authuser(mypw->pw_name, login_style, rule->options & PERSIST);
++		authuser(mypw->pw_name, rule->options & PERSIST);
+ 	}
+ 
+ 	if ((p = getenv("PATH")) != NULL)
+@@ -431,11 +440,12 @@
+ 	if (targpw == NULL)
+ 		errx(1, "no passwd entry for target");
+ 
+-	if (setusercontext(NULL, targpw, target, LOGIN_SETGROUP |
+-	    LOGIN_SETPATH |
+-	    LOGIN_SETPRIORITY | LOGIN_SETRESOURCES | LOGIN_SETUMASK |
+-	    LOGIN_SETUSER) != 0)
+-		errx(1, "failed to set user context for target");
++	if (initgroups(targpw->pw_name, targpw->pw_gid) < 0)
++		err(1, "initgroups");
++	if (setgid(targpw->pw_gid) < 0)
++		err(1, "setgid");
++	if (setuid(targpw->pw_uid) < 0)
++		err(1, "setuid");
+ 
+ 	if (pledge("stdio rpath exec", NULL) == -1)
+ 		err(1, "pledge");
+@@ -448,7 +458,7 @@
+ 	if (pledge("stdio exec", NULL) == -1)
+ 		err(1, "pledge");
+ 
+-	syslog(LOG_AUTHPRIV | LOG_INFO, "%s ran command %s as %s from %s",
++	syslog(LOG_INFO, "%s ran command %s as %s from %s",
+ 	    mypw->pw_name, cmdline, targpw->pw_name, cwd);
+ 
+ 	envp = prepenv(rule, mypw, targpw);
+diff -ruN ../../openbsd/usr.bin/doas/doas.h doas.patched/doas.h
+--- ../../openbsd/usr.bin/doas/doas.h	2019-06-18 04:51:23.000000000 +0900
++++ doas.patched/doas.h	2020-06-26 20:50:18.184275899 +0900
+@@ -36,6 +36,10 @@
+ char **prepenv(const struct rule *, const struct passwd *,
+     const struct passwd *);
+ 
++int openpersist(int *valid);
++int setpersist(int fd);
++int clearpersist(void);
++
+ #define PERMIT	1
+ #define DENY	2
+ 
+diff -ruN ../../openbsd/usr.bin/doas/env.c doas.patched/env.c
+--- ../../openbsd/usr.bin/doas/env.c	2019-07-08 04:21:28.000000000 +0900
++++ doas.patched/env.c	2020-06-26 20:53:00.113549339 +0900
+@@ -110,7 +110,7 @@
+ 	fillenv(env, copyset);
+ 
+ 	if (rule->options & KEEPENV) {
+-		extern const char **environ;
++//		extern const char **environ;
+ 
+ 		for (i = 0; environ[i] != NULL; i++) {
+ 			struct envnode *node;
+diff -ruN ../../openbsd/usr.bin/doas/Makefile doas.patched/Makefile
+--- ../../openbsd/usr.bin/doas/Makefile	2017-07-04 07:21:47.000000000 +0900
++++ doas.patched/Makefile	1970-01-01 09:00:00.000000000 +0900
+@@ -1,15 +0,0 @@
+-#	$OpenBSD: Makefile,v 1.3 2017/07/03 22:21:47 espie Exp $
+-
+-SRCS=	parse.y doas.c env.c
+-
+-PROG=	doas
+-MAN=	doas.1 doas.conf.5
+-
+-BINOWN= root
+-BINMODE=4555
+-
+-CFLAGS+= -I${.CURDIR}
+-COPTS+=	-Wall
+-YFLAGS=
+-
+-.include <bsd.prog.mk>
+diff -ruN ../../openbsd/usr.bin/doas/oasis.c doas.patched/oasis.c
+--- ../../openbsd/usr.bin/doas/oasis.c	1970-01-01 09:00:00.000000000 +0900
++++ doas.patched/oasis.c	2020-06-26 20:52:24.786362340 +0900
+@@ -0,0 +1,135 @@
++/* From Oasis Linux */
++#include <errno.h>
++#include <fcntl.h>
++#include <limits.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/stat.h>
++#include <sys/types.h>
++#include <time.h>
++#include <unistd.h>
++
++#include "doas.h"
++
++#define PERSIST_DIR "/run/doas"
++#define PERSIST_TIMEOUT 5 * 60
++
++static int
++ttyid(dev_t *tty)
++{
++	int fd, i;
++	char buf[BUFSIZ], *p;
++	ssize_t n;
++
++	fd = open("/proc/self/stat", O_RDONLY);
++	if (fd == -1)
++		return -1;
++	n = read(fd, buf, sizeof(buf) - 1);
++	if (n >= 0)
++		buf[n] = '\0';
++	/* check that we read the whole file */
++	n = read(fd, buf, 1);
++	close(fd);
++	if (n != 0)
++		return -1;
++	p = strrchr(buf, ')');
++	if (!p)
++		return -1;
++	++p;
++	/* ttr_nr is the 5th field after executable name, so skip the next 4 */
++	for (i = 0; i < 4; ++i) {
++		p = strchr(++p, ' ');
++		if (!p)
++			return -1;
++	}
++	*tty = strtol(p, &p, 10);
++	if (*p != ' ')
++		return -1;
++	return 0;
++}
++
++static int
++persistpath(char *buf, size_t len)
++{
++	dev_t tty;
++	int n;
++
++	if (ttyid(&tty) < 0)
++		return -1;
++	n = snprintf(buf, len, PERSIST_DIR "/%ju-%ju", (uintmax_t)getuid(), (uintmax_t)tty);
++	if (n < 0 || n >= (int)len)
++		return -1;
++	return 0;
++}
++
++int
++openpersist(int *valid)
++{
++	char path[256];
++	struct stat st;
++	struct timespec ts;
++	int fd;
++
++	if (stat(PERSIST_DIR, &st) < 0) {
++		if (errno != ENOENT)
++			return -1;
++		if (mkdir(PERSIST_DIR, 0700) < 0)
++			return -1;
++	} else if (st.st_uid != 0 || st.st_mode != (S_IFDIR | 0700)) {
++		return -1;
++	}
++	if (persistpath(path, sizeof(path)) < 0)
++		return -1;
++	fd = open(path, O_RDONLY);
++	if (fd == -1) {
++		char tmp[256];
++		struct timespec ts[2] = { { .tv_nsec = UTIME_OMIT }, { 0 } };
++		int n;
++
++		n = snprintf(tmp, sizeof(tmp), PERSIST_DIR "/.tmp-%d", getpid());
++		if (n < 0 || n >= (int)sizeof(tmp))
++			return -1;
++		fd = open(tmp, O_RDONLY | O_CREAT | O_EXCL, 0);
++		if (fd == -1)
++			return -1;
++		if (futimens(fd, ts) < 0 || rename(tmp, path) < 0) {
++			close(fd);
++			unlink(tmp);
++			return -1;
++		}
++		*valid = 0;
++	} else {
++		*valid = clock_gettime(CLOCK_BOOTTIME, &ts) == 0 &&
++		         fstat(fd, &st) == 0 &&
++		         (ts.tv_sec < st.st_mtim.tv_sec ||
++		          (ts.tv_sec == st.st_mtim.tv_sec && ts.tv_nsec < st.st_mtim.tv_nsec)) &&
++		         st.st_mtime - ts.tv_sec <= PERSIST_TIMEOUT;
++	}
++	return fd;
++}
++
++int
++setpersist(int fd)
++{
++	struct timespec times[2];
++
++	if (clock_gettime(CLOCK_BOOTTIME, &times[1]) < 0)
++		return -1;
++	times[0].tv_nsec = UTIME_OMIT;
++	times[1].tv_sec += PERSIST_TIMEOUT;
++	return futimens(fd, times);
++}
++
++int
++clearpersist(void)
++{
++	char path[256];
++
++	if (persistpath(path, sizeof(path)) < 0)
++		return -1;
++	if (unlink(path) < 0 && errno != ENOENT)
++		return -1;
++	return 0;
++}
+diff -ruN ../../openbsd/usr.bin/doas/parse.y doas.patched/parse.y
+--- ../../openbsd/usr.bin/doas/parse.y	2018-07-11 16:39:22.000000000 +0900
++++ doas.patched/parse.y	2020-06-26 20:33:56.450828383 +0900
+@@ -22,6 +22,7 @@
+ #include <stdint.h>
+ #include <stdarg.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <err.h>
+ 

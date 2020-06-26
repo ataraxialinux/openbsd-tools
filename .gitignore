@@ -36,9 +36,11 @@ src/cmp/cmp
 src/diff/diff
 src/diff3/diff3prog
 src/sdiff/sdiff
+src/doas/doas
 src/cmp/Makefile
 src/diff/Makefile
 src/diff3/Makefile
 src/sdiff/Makefile
+src/doas/Makefile
 src/Makefile
 ylwrap

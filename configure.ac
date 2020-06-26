@@ -18,5 +18,6 @@ AC_CONFIG_FILES([Makefile
 		src/cmp/Makefile
 		src/diff/Makefile
 		src/diff3/Makefile
-		src/sdiff/Makefile])
+		src/sdiff/Makefile
+		src/doas/Makefile])
 AC_OUTPUT

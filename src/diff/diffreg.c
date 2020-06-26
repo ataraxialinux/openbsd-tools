@@ -475,6 +475,7 @@ opentemp(const char *file)
 	return (fdopen(ofd, "r"));
 }
 
+#ifndef __GLIBC__
 char *
 splice(char *dir, char *file)
 {
@@ -491,6 +492,7 @@ splice(char *dir, char *file)
 	xasprintf(&buf, "%.*s/%s", (int)dirlen, dir, tail);
 	return (buf);
 }
+#endif
 
 static void
 prepare(int i, FILE *fd, off_t filesize, int flags)
