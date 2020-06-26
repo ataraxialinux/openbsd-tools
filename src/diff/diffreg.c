@@ -476,7 +476,7 @@ opentemp(const char *file)
 }
 
 char *
-osplice(char *dir, char *file)
+splice(char *dir, char *file)
 {
 	char *tail, *buf;
 	size_t dirlen;

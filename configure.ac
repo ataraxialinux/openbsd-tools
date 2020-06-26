@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([openbsd-diffutils], [6.6], [ataraxialinux@protonmail.com])
+AC_INIT([openbsd-userland], [6.7], [ataraxialinux@protonmail.com])
 AM_INIT_AUTOMAKE
 AM_SANITY_CHECK
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
