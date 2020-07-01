@@ -475,7 +475,7 @@ opentemp(const char *file)
 	return (fdopen(ofd, "r"));
 }
 
-#ifndef __GLIBC__
+#if 0
 char *
 splice(char *dir, char *file)
 {

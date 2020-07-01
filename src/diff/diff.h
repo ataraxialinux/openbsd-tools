@@ -88,7 +88,7 @@ extern struct	stat stb1, stb2;
 extern struct	excludes *excludes_list;
 extern regex_t	ignore_re;
 
-#ifndef __GLIBC__
+#if 0
 char	*splice(char *, char *);
 #endif
 int	diffreg(char *, char *, int);
