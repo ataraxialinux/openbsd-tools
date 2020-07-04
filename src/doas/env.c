@@ -26,6 +26,8 @@
 #include <errno.h>
 #include <pwd.h>
 
+#include <bsd.h>
+
 #include "doas.h"
 
 const char *formerpath;

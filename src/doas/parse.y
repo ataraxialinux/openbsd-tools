@@ -26,6 +26,8 @@
 #include <string.h>
 #include <err.h>
 
+#include <bsd.h>
+
 #include "doas.h"
 
 typedef struct {

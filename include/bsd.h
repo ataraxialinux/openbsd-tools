@@ -1,10 +1,10 @@
-#include <sys/termios.h>
 #include <sys/types.h>
 #include <sys/sysmacros.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <limits.h>
+#include <termios.h>
 
 #define	__attribute__(x)
 #define __dead		__attribute__((__noreturn__))
