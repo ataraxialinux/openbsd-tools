@@ -22,5 +22,6 @@ AC_CONFIG_FILES([Makefile
 		src/doas/Makefile
 		src/indent/Makefile
 		src/pr/Makefile
-		src/users/Makefile])
+		src/users/Makefile
+		src/test/Makefile])
 AC_OUTPUT

@@ -40,6 +40,7 @@ src/doas/doas
 src/indent/indent
 src/pr/pr
 src/users/users
+src/test/test
 src/cmp/Makefile
 src/diff/Makefile
 src/diff3/Makefile
@@ -48,5 +49,6 @@ src/doas/Makefile
 src/indent/Makefile
 src/pr/Makefile
 src/users/Makefile
+src/test/Makefile
 src/Makefile
 ylwrap
