@@ -37,10 +37,16 @@ src/diff/diff
 src/diff3/diff3prog
 src/sdiff/sdiff
 src/doas/doas
+src/csplit/csplit
+src/pr/pr
+src/users/users
 src/cmp/Makefile
 src/diff/Makefile
 src/diff3/Makefile
 src/sdiff/Makefile
 src/doas/Makefile
+src/csplit/Makefile
+src/pr/Makefile
+src/users/Makefile
 src/Makefile
 ylwrap

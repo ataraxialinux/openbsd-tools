@@ -61,3 +61,4 @@ __dead void	verrc(int, int, const char *, __va_list)
 			__attribute__((__format__ (printf, 3, 0)));
 extern const char* getprogname(void);
 extern void setprogname(const char*);
+

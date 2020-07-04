@@ -40,6 +40,8 @@
 #define FPARSELN_UNESCREST	0x08
 #define FPARSELN_UNESCALL	0x0f
 
+char	*fgetln(FILE *, size_t *);
+
 static int isescaped(const char *, const char *, int);
 
 /* isescaped():
@@ -210,3 +212,4 @@ line 6
 */
 
 #endif /* TEST */
+

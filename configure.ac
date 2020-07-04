@@ -19,5 +19,8 @@ AC_CONFIG_FILES([Makefile
 		src/diff/Makefile
 		src/diff3/Makefile
 		src/sdiff/Makefile
-		src/doas/Makefile])
+		src/doas/Makefile
+		src/csplit/Makefile
+		src/pr/Makefile
+		src/users/Makefile])
 AC_OUTPUT
