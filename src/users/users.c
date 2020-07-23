@@ -39,6 +39,8 @@
 #include <unistd.h>
 #include <utmp.h>
 
+#include <bsd.h>
+
 #define pledge(request, paths) 0 /* linux doesn't have pledge */
 #define unveil(request, paths) 0 /* linux doesn't have pledge */
 
