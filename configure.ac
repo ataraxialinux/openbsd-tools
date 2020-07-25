@@ -24,5 +24,6 @@ AC_CONFIG_FILES([Makefile
 		src/pr/Makefile
 		src/users/Makefile	
 		src/ln/Makefile
-		src/stty/Makefile])
+		src/stty/Makefile
+		src/fmt/Makefile])
 AC_OUTPUT
