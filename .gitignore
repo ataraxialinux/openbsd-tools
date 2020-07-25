@@ -40,7 +40,6 @@ src/doas/doas
 src/indent/indent
 src/pr/pr
 src/users/users
-src/test/test
 src/ln/ln
 src/stty/stty
 src/cmp/Makefile
@@ -51,7 +50,6 @@ src/doas/Makefile
 src/indent/Makefile
 src/pr/Makefile
 src/users/Makefile
-src/test/Makefile
 src/ln/Makefile
 src/stty/Makefile
 src/Makefile

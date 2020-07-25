@@ -1,1 +1,1 @@
-SUBDIRS = libopenbsd cmp diff diff3 sdiff doas indent pr users test ln stty
+SUBDIRS = libopenbsd cmp diff diff3 sdiff doas indent pr users ln stty
