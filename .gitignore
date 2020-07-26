@@ -43,6 +43,7 @@ src/users/users
 src/ln/ln
 src/stty/stty
 src/fmt/fmt
+src/xinstall/install
 src/cmp/Makefile
 src/diff/Makefile
 src/diff3/Makefile
@@ -54,5 +55,6 @@ src/users/Makefile
 src/ln/Makefile
 src/fmt/Makefile
 src/stty/Makefile
+src/xinstall/Makefile
 src/Makefile
 ylwrap

@@ -6,11 +6,14 @@ libopenbsd_a_SOURCES = \
 			fgetln.c \
 			fparseln.c \
 			getprogname.c \
+			pwcache.c \
 			readpassphrase.c \
 			reallocarray.c \
+			setmode.c \
 			setprogname.c \
 			strlcat.c \
 			strlcpy.c \
+			strtofflags.c \
 			strtonum.c \
 			verrc.c \
 			vwarnc.c \

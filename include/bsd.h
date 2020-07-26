@@ -84,6 +84,23 @@
 #define	NMEADISC	7		/* NMEA0183 discipline */
 /* TTY SHIT END */
 
+/* stat */
+#define	S_BLKSIZE	512		/* block size used in the stat struct */
+#define	UF_NODUMP	0x00000001	/* do not dump file */
+#define	UF_IMMUTABLE	0x00000002	/* file may not be changed */
+#define	UF_APPEND	0x00000004	/* writes to file may only append */
+#define	UF_OPAQUE	0x00000008	/* directory is opaque wrt. union */
+#define	SF_IMMUTABLE	0x00020000	/* file may not be changed */
+#define	SF_APPEND	0x00040000	/* writes to file may only append */
+#define	SF_ARCHIVED	0x00010000	/* file is archived */
+/* stat end */
+
+#define EFTYPE		79	/* Inappropriate file type or format */
+#define	MAXBSIZE	(64 * 1024)
+#define	S_ISTXT S_ISVTX
+#define _PW_BUF_LEN		1024	/* length of getpw*_r buffer */
+#define	_GR_BUF_LEN		(1024+200*sizeof(char*))
+
 typedef va_list __va_list;
 struct __sFILE;
 
@@ -110,4 +127,8 @@ __dead void	verrc(int, int, const char *, __va_list)
 			__attribute__((__format__ (printf, 3, 0)));
 extern const char* getprogname(void);
 extern void setprogname(const char*);
-
+int	 strtofflags(char **, u_int32_t *, u_int32_t *);
+mode_t	 getmode(const void *, mode_t);
+void	*setmode(const char *);
+int		 gid_from_group(const char *, gid_t *);
+int		 uid_from_user(const char *, uid_t *);
